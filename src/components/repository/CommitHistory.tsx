@@ -1,17 +1,6 @@
-import React from 'react';
-import { GitCommit, ChevronRight, FileText, Plus, Minus, Edit2 } from 'lucide-react';
+import { GitCommit, FileText} from 'lucide-react';
 import type { Commit } from '../../types/repository';
 
-const getChangeIcon = (type: string) => {
-  switch (type) {
-    case 'added':
-      return <Plus className="w-4 h-4 text-green-500" />;
-    case 'deleted':
-      return <Minus className="w-4 h-4 text-red-500" />;
-    default:
-      return <Edit2 className="w-4 h-4 text-yellow-500" />;
-  }
-};
 
 interface CommitHistoryProps {
   commits: Commit[];

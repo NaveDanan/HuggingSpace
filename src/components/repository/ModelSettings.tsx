@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { Lock, Trash2, AlertTriangle } from 'lucide-react';
 import type { Model } from '../../types/models';
 

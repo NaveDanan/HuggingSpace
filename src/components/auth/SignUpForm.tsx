@@ -24,7 +24,7 @@ export function SignUpForm() {
     try {
       await signUp(email, password);
       navigate('/');
-    } catch (err) {
+    } catch {
       setError('Failed to create account');
     } finally {
       setIsLoading(false);

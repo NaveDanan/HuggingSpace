@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { FileExplorer } from './FileExplorer';
 import { FileViewer } from './FileViewer';
 import { FileActions } from './FileActions';
@@ -24,7 +24,7 @@ export function ModelFiles({ model }: ModelFilesProps) {
     addFile,
     uploadFiles
   } = useModelFiles(model.id);
-  const { updateFile, loading: updateLoading } = useUpdateModelFile(model.id);
+  const { updateFile } = useUpdateModelFile(model.id);
   const { commits, loading: commitsLoading, createCommit: createModelCommit } = useModelCommits(model.id);
 
   const handleFileUpdate = async (content: string, commitMessage: string) => {

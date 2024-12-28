@@ -3,6 +3,7 @@ import { FileText, Download, Code, FileCode, Save, Copy } from 'lucide-react';
 import loader from '@monaco-editor/loader';
 import Editor from '@monaco-editor/react';
 import { CommitDialog } from './CommitDialog';
+import * as monaco from 'monaco-editor';
 import { getLanguageFromPath } from '../../utils/languages';
 
 // Configure Monaco loader
@@ -14,7 +15,7 @@ interface FileViewerProps {
   language?: string | null;
   readOnly?: boolean;
   isOwner?: boolean;
-  onSave?: (content: string) => Promise<void>;
+  onSave?: (content: string, message: string) => Promise<void>;
 }
 
 export function FileViewer({ 
@@ -26,11 +27,10 @@ export function FileViewer({
   onSave 
 }: FileViewerProps) {
   const [isEditorMode, setIsEditorMode] = React.useState(false);
-  const [isEditorReady, setIsEditorReady] = React.useState(false);
   const [showCommitDialog, setShowCommitDialog] = React.useState(false);
   const [editedContent, setEditedContent] = React.useState(content);
   const [hasChanges, setHasChanges] = React.useState(false);
-  const editorRef = React.useRef<any>(null);
+  const editorRef = React.useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
 
   // Get language from file path or use provided language
   const detectedLanguage = language || getLanguageFromPath(path);
@@ -53,7 +53,6 @@ export function FileViewer({
   };
 
   const handleEditorDidMount = () => {
-    setIsEditorReady(true);
     if (editorRef.current) {
       editorRef.current.focus();
     }

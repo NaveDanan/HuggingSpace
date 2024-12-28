@@ -41,7 +41,7 @@ export function useModelCommits(modelId: string) {
         const formattedCommits = (data || []).map(commit => ({
           id: commit.hash,
           message: commit.message,
-          author: commit.profiles.display_name || commit.profiles.username,
+          author: commit.profiles[0].display_name || commit.profiles[0].username,
           date: commit.created_at,
           files: commit.files
         }));
@@ -116,7 +116,7 @@ export function useModelCommits(modelId: string) {
       const formattedCommits: Commit[] = (data || []).map(commit => ({
         id: commit.hash,
         message: commit.message,
-        author: commit.profiles.display_name || commit.profiles.username,
+        author: commit.profiles[0].display_name || commit.profiles[0].username,
         date: commit.created_at,
         files: commit.files
       }));
