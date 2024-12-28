@@ -20,7 +20,7 @@ export function SignInForm() {
     try {
       await signIn(email, password);
       navigate('/');
-    } catch {
+    } catch (err) {
       setError('Invalid email or password');
     } finally {
       setIsLoading(false);

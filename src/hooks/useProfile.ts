@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 import { useAuthContext } from '../contexts/AuthContext';
 import { handleSupabaseError } from '../utils/error';
 import { withRetry } from '../lib/supabase';
-import type { Profile } from '../types/profile';
+import type { Profile, Space, Model, Dataset } from '../types/profile';
 
 export function useProfile(username?: string) {
   const { user } = useAuthContext();

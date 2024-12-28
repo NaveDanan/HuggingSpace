@@ -1,16 +1,17 @@
 import type { FileNode } from '../types/repository';
 
-function sanitizePath(path: string | null | undefined): string[] {  
-  if (!path) return [];
-  return path.split('/').filter(Boolean);
+function sanitizePath(path: string): string[] {
+  return path.trim().split('/').filter(Boolean);
 }
 
 export function buildFileTree(files: Array<{ path: string; content: string }>): FileNode[] {
   const root: FileNode[] = [];
 
   files.forEach(({ path, content }) => {
+    if (!path) return;
+    
     const parts = sanitizePath(path);
-    if (parts.length === 0) return;
+    if (!parts.length) return;
 
     let current = root;
 
@@ -21,6 +22,9 @@ export function buildFileTree(files: Array<{ path: string; content: string }>): 
 
       if (existing) {
         if (!isFile) {
+          if (!existing.children) {
+            existing.children = [];
+          }
           current = existing.children!;
         } else {
           // Update existing file
@@ -53,8 +57,10 @@ export function buildFileTree(files: Array<{ path: string; content: string }>): 
 }
 
 export function findFileContent(files: FileNode[], path: string | null): string | null {
+  if (!path) return null;
+  
   const parts = sanitizePath(path);
-  if (parts.length === 0) return null;
+  if (!parts.length) return null;
 
   let current = files;
 
@@ -62,6 +68,7 @@ export function findFileContent(files: FileNode[], path: string | null): string 
     const node = current.find(f => f.name === part);
     if (!node) return null;
     if (node.type === 'folder') {
+      if (!node.children) return null;
       current = node.children || [];
     } else {
       return node.content || '';

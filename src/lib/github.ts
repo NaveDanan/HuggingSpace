@@ -1,17 +1,21 @@
 import { supabase } from './supabase';
 
-const GITHUB_CLIENT_ID = import.meta.env.VITE_GITHUB_CLIENT_ID;
-const GITHUB_CLIENT_SECRET = import.meta.env.VITE_GITHUB_CLIENT_SECRET;
+import { config } from './supabase';
+
 const GITHUB_REDIRECT_URI = `${window.location.origin}/settings/profile`;
 
 export async function initiateGitHubOAuth() {
   const state = crypto.randomUUID();
   
+  if (!config.githubClientId) {
+    throw new Error('GitHub client ID not configured');
+  }
+
   // Store state in localStorage for verification
   localStorage.setItem('github_oauth_state', state);
   
   const params = new URLSearchParams({
-    client_id: GITHUB_CLIENT_ID,
+    client_id: config.githubClientId,
     redirect_uri: GITHUB_REDIRECT_URI,
     scope: 'read:user user:email',
     state,
@@ -39,8 +43,8 @@ export async function handleGitHubCallback(code: string, state: string) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      client_id: GITHUB_CLIENT_ID,
-      client_secret: GITHUB_CLIENT_SECRET,
+      client_id: config.githubClientId,
+      client_secret: config.githubClientSecret,
       code,
       redirect_uri: GITHUB_REDIRECT_URI
     })

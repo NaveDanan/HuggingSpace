@@ -20,7 +20,7 @@ export function useContent(type: 'model' | 'dataset' | 'space', username: string
           .from('profiles')
           .select('id')
           .eq('username', username)
-          .single().then(response => response),
+          .single(),
           5, 1000
         );
 

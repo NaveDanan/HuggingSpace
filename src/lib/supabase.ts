@@ -2,15 +2,29 @@ import { createClient } from '@supabase/supabase-js';
 import type { Database } from '../types/supabase';
 import { sleep } from '../utils/async';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+// Get config from environment variables with fallbacks
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
+const githubClientId = import.meta.env.VITE_GITHUB_CLIENT_ID || process.env.GITHUB_CLIENT_ID;
+const githubClientSecret = import.meta.env.VITE_GITHUB_CLIENT_SECRET || process.env.GITHUB_CLIENT_SECRET;
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('Missing Supabase environment variables');
+  throw new Error(
+    'Missing Supabase configuration. Please ensure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY ' +
+    'are set in your .env file or as environment variables.'
+  );
 }
 
+// Export config for use in other files
+export const config = {
+  supabaseUrl,
+  supabaseAnonKey,
+  githubClientId,
+  githubClientSecret
+};
+
 // Create Supabase client with better error handling
-export const supabase = createClient<Database>(supabaseUrl || '', supabaseAnonKey || '', {
+export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
@@ -76,7 +90,7 @@ export async function withRetry<T>(
       if (!result) {
         throw new Error('Operation returned no data');
       }
-      return result as T;
+      return result;
     } catch (err) {
       const isRetryableError = err instanceof Error && (
         err.message.includes('Failed to fetch') ||
@@ -108,7 +122,7 @@ export async function withRetry<T>(
 // Helper to check connection status
 export async function checkConnection(): Promise<boolean> {
   try {
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('spaces')
       .select('id')
       .limit(1)

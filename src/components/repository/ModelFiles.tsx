@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { FileExplorer } from './FileExplorer';
 import { FileViewer } from './FileViewer';
 import { FileActions } from './FileActions';
 import { CreateFileModal } from './CreateFileModal';
+import { CreateFolderModal } from './CreateFolderModal';
 import { CommitHistory } from './CommitHistory';
 import { useModelFiles, useUpdateModelFile } from '../../hooks/useModelFiles';
 import { useModelCommits } from '../../hooks/useModelCommits';
@@ -17,14 +18,16 @@ export function ModelFiles({ model }: ModelFilesProps) {
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showCreateFolderModal, setShowCreateFolderModal] = useState(false);
   const { 
     files, 
     loading, 
     error,
     addFile,
+    addFolder,
     uploadFiles
   } = useModelFiles(model.id);
-  const { updateFile } = useUpdateModelFile(model.id);
+  const { updateFile, loading: updateLoading } = useUpdateModelFile(model.id);
   const { commits, loading: commitsLoading, createCommit: createModelCommit } = useModelCommits(model.id);
 
   const handleFileUpdate = async (content: string, commitMessage: string) => {
@@ -32,12 +35,21 @@ export function ModelFiles({ model }: ModelFilesProps) {
     
     try {
       await createModelCommit(commitMessage, [selectedFile]);
+      await updateFile(selectedFile, content);
     } catch (err) {
       console.error('Error creating commit:', err);
       throw err;
     }
-    
-    await updateFile(selectedFile, content);
+  };
+
+  const handleFolderCreate = async (folderPath: string) => {
+    try {
+      await addFolder(folderPath);
+      // Folder creation will automatically create a commit
+    } catch (err) {
+      console.error('Error creating folder:', err);
+      throw err;
+    }
   };
 
   return (
@@ -57,6 +69,7 @@ export function ModelFiles({ model }: ModelFilesProps) {
         </div>
         <FileActions
           onFileCreate={() => setShowCreateModal(true)}
+          onFolderCreate={() => setShowCreateFolderModal(true)}
           onFileUpload={uploadFiles}
           disabled={!model.is_owner}
         />
@@ -107,6 +120,12 @@ export function ModelFiles({ model }: ModelFilesProps) {
           addFile(filename);
           setSelectedFile(filename);
         }}
+      />
+      <CreateFolderModal
+        isOpen={showCreateFolderModal}
+        onClose={() => setShowCreateFolderModal(false)}
+        onSubmit={handleFolderCreate}
+        currentPath={selectedFile?.split('/').slice(0, -1).join('/') || ''}
       />
     </div>
   );

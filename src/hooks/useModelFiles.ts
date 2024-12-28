@@ -52,19 +52,77 @@ export function useModelFiles(modelId: string) {
     loadFiles();
   }, [modelId, user]);
 
-  // File operations
-  const addFile = useCallback(async (filename: string, content: string = '') => {
+  const addFolder = useCallback(async (folderPath: string) => {
     if (!user) throw new Error('Not authenticated');
+    if (!folderPath) throw new Error('Folder path is required');
+    if (!modelId) throw new Error('Model ID is required');
 
     try {
       setLoading(true);
-      await uploadFile(user.id, modelId, filename, content);
+      
+      const pathParts = folderPath.trim().split('/').filter(Boolean);
+      const cleanPath = pathParts.join('/');
+
+      if (!cleanPath) {
+        throw new Error('Invalid folder path');
+      }
+
+      // Validate folder name format
+      const folderName = pathParts[pathParts.length - 1];
+      if (!folderName || !/^[\w\-. ]+$/.test(folderName)) {
+        throw new Error('Invalid folder name. Use only letters, numbers, spaces, dots, and dashes');
+      }
+
+      // Create .gitkeep file in the folder
+      const gitkeepPath = `${cleanPath}/.gitkeep`;
+      await uploadFile(user.id, modelId, gitkeepPath, '');
+
+      setFiles(current => {
+        const newFolder = {
+          name: folderName,
+          type: 'folder' as const,
+          path: cleanPath,
+          children: [],
+        };
+
+        return buildFileTree([...current.map(f => ({
+          path: f.path,
+          content: f.content || ''
+        })), {
+          path: gitkeepPath,
+          content: ''
+        }]);
+      });
+
+      return cleanPath;
+    } catch (err) {
+      const error = err instanceof Error 
+        ? err 
+        : new Error('Failed to create folder. Please try again.');
+      setError(error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  }, [modelId, user]);
+
+  // File operations
+  const addFile = useCallback(async (filename: string, content: string = '') => {
+    if (!user) throw new Error('Not authenticated');
+    if (!filename) throw new Error('Filename is required');
+
+    try {
+      setLoading(true);
+      
+      // Sanitize filename
+      const sanitizedFilename = filename.replace(/[^\w\-./]/g, '_').trim();
+      await uploadFile(user.id, modelId, sanitizedFilename, content);
       
       setFiles(current => {
         const newFile = {
-          name: filename,
+          name: sanitizedFilename,
           type: 'file' as const,
-          path: filename,
+          path: sanitizedFilename,
           content,
           size: content.length,
           lastModified: new Date().toISOString()
@@ -137,6 +195,7 @@ export function useModelFiles(modelId: string) {
     loading,
     error,
     addFile,
+    addFolder,
     uploadFiles
   };
 }

@@ -4,26 +4,74 @@ import { withRetry } from './supabase';
 export const BUCKET_NAME = 'model-files';
 export const MAX_FILE_SIZE = 500 * 1024 * 1024; // 500MB
 
+function sanitizePath(path: string): string[] {
+  return path
+    .trim()
+    .split('/')
+    .filter(Boolean)
+    .map(part => part.replace(/[^\w\-. ]/g, '_'));
+}
+
 function buildStoragePath(userId: string, modelId: string, filename: string) {
   // Clean and validate path components
   const cleanUserId = userId.trim();
   const cleanModelId = modelId.trim();
-  const cleanFilename = filename.trim();
+  const pathParts = sanitizePath(filename);
 
-  if (!cleanUserId || !cleanModelId || !cleanFilename) {
-    throw new Error('Invalid path components');
+  // Validate path components
+  if (!cleanUserId) {
+    throw new Error('User ID is required');
+  }
+  if (!cleanModelId) {
+    throw new Error('Model ID is required');
+  }
+  if (!pathParts.length) {
+    throw new Error('Invalid filename');
   }
 
   // Construct storage path: userId/models/modelId/filename
-  return `${cleanUserId}/models/${cleanModelId}/${cleanFilename}`.replace(/\/+/g, '/');
+  return `${cleanUserId}/models/${cleanModelId}/${pathParts.join('/')}`;
 }
 
+export async function listFolder(
+  userId: string,
+  modelId: string,
+  folderPath: string = ''
+): Promise<string[]> {
+  const prefix = buildStoragePath(userId, modelId, folderPath);
+
+  try {
+    const { data, error } = await withRetry(() =>
+      supabase.storage
+        .from(BUCKET_NAME)
+        .list(prefix, {
+          limit: 100,
+          search: '',
+          sortBy: { column: 'name', order: 'asc' }
+        })
+    );
+
+    if (error) throw error;
+    
+    return data
+      .filter(item => !item.name.endsWith('/.gitkeep'))
+      .map(item => item.name.slice(prefix.length + 1))
+      .filter(Boolean);
+  } catch (err) {
+    console.error('Error listing folder:', err);
+    return [];
+  }
+}
 export async function uploadFile(
   userId: string, 
   modelId: string, 
   filename: string,
   content: string | Blob
 ): Promise<string> {
+  if (!userId || !modelId || !filename) {
+    throw new Error('Missing required parameters');
+  }
+
   const storagePath = buildStoragePath(userId, modelId, filename);
 
   // Convert content to Blob if needed
@@ -47,7 +95,10 @@ export async function uploadFile(
       })
   );
 
-  if (error) throw error;
+  if (error) {
+    console.error('Storage upload error:', error);
+    throw error;
+  }
   return data.path;
 }
 

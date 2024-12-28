@@ -1,3 +1,4 @@
+import React from 'react';
 import { Database, Box, FileText } from 'lucide-react';
 import { NavLink } from './NavLink';
 
